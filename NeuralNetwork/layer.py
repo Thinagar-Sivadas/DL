@@ -32,6 +32,29 @@ class _init(object):
         else:
             self.params = None
 
+    def _init_param(self, n_inputs, next_layer):
+        """Intialise weights and bias
+        https://towardsdatascience.com/26c649eb3b78
+        https://towardsdatascience.com/954fb9b47c79
+        https://www.youtube.com/watch?v=yWCj95DdWXs&ab_channel=NPTEL-NOCIITM
+        https://www.youtube.com/watch?v=s2coXdufOzE&t=211s&ab_channel=Deeplearning.ai
+
+        Args:
+            n_inputs (int): Number of input neurons to current layer
+            next_layer (obj): Contains object of next layer
+        """
+        self.n_inputs = n_inputs
+
+        if next_layer.__class__.__name__ in ['ReLU', 'LeakyReLU']:
+            # Initialisation for ReLU, LeakyReLU
+            self.weights = np.random.randn(self.n_inputs, self.n_neurons) * np.sqrt(2 / self.n_inputs)
+        else:
+            # Initialisation for any others
+            self.weights = np.random.randn(self.n_inputs, self.n_neurons) * np.sqrt(1 / self.n_inputs)
+
+        self.bias = np.zeros(shape=(1, self.n_neurons))
+        self.params = self.weights.size + self.bias.size
+
 class Dense(_init):
     """Dense Layer
     """
@@ -40,12 +63,6 @@ class Dense(_init):
         super()._init_layer(name=name, n_neurons=n_neurons, weights=weights,
                            bias=bias, freeze_weights=freeze_weights, lr=lr)
 
-    def _init_param(self, n_inputs):
-        self.n_inputs = n_inputs
-        self.weights = 0.10 * np.random.randn(self.n_inputs, self.n_neurons)
-        self.bias = np.zeros(shape=(1, self.n_neurons))
-        self.params = self.weights.size + self.bias.size
-
     def forward(self, inputs):
         """Forward propagation
         https://www.kdnuggets.com/2019/08/numpy-neural-networks-computational-graphs.html
@@ -53,12 +70,6 @@ class Dense(_init):
         Args:
             inputs (samples, n_neurons): [description]
         """
-        if self.weights is None or self.bias is None:
-            print(f'Initialising weights and bias for {self.name}')
-            self._init_param(inputs.shape[1])
-        elif self.weights.shape[0] != inputs.shape[1]:
-            print(f'Reinitialising weights and bias for {self.name} due to change in input neurons')
-            self._init_param(inputs.shape[1])
         self.activation_prev = inputs
         self.output = np.dot(self.activation_prev, self.weights) + self.bias
 

@@ -17,7 +17,7 @@ class Sequential(object):
         self.inputs = inputs
         self.target = target
         self.batch = batch
-        self._forward(inputs=inputs, layer_name=None)
+        self._compile_forward(inputs=self.inputs)
 
     def train(self, epochs=100):
         self.cost = []
@@ -67,6 +67,26 @@ class Sequential(object):
             if layer_name == layer.name:
                 break
         return input_data
+
+    def _compile_forward(self, inputs):
+        input_neuron = inputs.shape[1]
+        number_layers = len(self.layers)
+        for ind, layer in enumerate(self.layers):
+            if hasattr(layer, 'weights'):
+
+                if ind < number_layers - 1:
+                    next_layer = self.layers[ind+1]
+                else:
+                    next_layer = None
+
+                if layer.weights is None or layer.bias is None:
+                    print(f'Initialising weights and bias for {layer.name}')
+                    layer._init_param(input_neuron, next_layer=next_layer)
+                elif layer.weights.shape[0] != input_neuron:
+                    print(f'Reinitialising weights and bias for {layer.name} due to change in input neurons')
+                    layer._init_param(input_neuron, next_layer=next_layer)
+
+                input_neuron = layer.n_neurons
 
     def _backward(self, delta_grad):
         upstream_grad = delta_grad
