@@ -68,7 +68,7 @@ class Dense(_init):
         https://www.kdnuggets.com/2019/08/numpy-neural-networks-computational-graphs.html
 
         Args:
-            inputs (samples, n_neurons): [description]
+            inputs (samples, n_neurons): Dot product with input
         """
         self.activation_prev = inputs
         self.output = np.dot(self.activation_prev, self.weights) + self.bias
