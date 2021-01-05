@@ -4,7 +4,7 @@ class _init(object):
     """Intialisation of Layers
     """
 
-    def _init_layer(self, name, n_neurons, weights, bias, freeze_weights, lr):
+    def _init_layer(self, name, n_neurons, weights, bias, freeze_weights, lr, optimiser):
         """Intialise layer with parameters
 
         Args:
@@ -24,6 +24,7 @@ class _init(object):
         self.bias = bias
         self.lr = lr
         self.freeze_weights = freeze_weights
+        self.optimiser = optimiser
 
         if self.weights is not None and self.bias is not None:
             self.params = self.weights.size + self.bias.size
@@ -31,6 +32,9 @@ class _init(object):
                 raise ValueError(f'n_neurons chosen for {self.name} does not tally with initialised weights and bias')
         else:
             self.params = None
+
+        if not hasattr(self.optimiser, '__module__') or self.optimiser.__module__ not in 'NeuralNetwork.optimiser':
+            raise ValueError(f'Selected optimiser for {self.name} is invalid')
 
     def _init_param(self, n_inputs, next_layer):
         """Intialise weights and bias
@@ -59,9 +63,9 @@ class Dense(_init):
     """Dense Layer
     """
 
-    def __init__(self, name, n_neurons, weights=None, bias=None, freeze_weights=False, lr=1):
+    def __init__(self, name, n_neurons, optimiser, weights=None, bias=None, freeze_weights=False, lr=1):
         super()._init_layer(name=name, n_neurons=n_neurons, weights=weights,
-                           bias=bias, freeze_weights=freeze_weights, lr=lr)
+                           bias=bias, freeze_weights=freeze_weights, lr=lr, optimiser=optimiser)
 
     def forward(self, inputs):
         """Forward propagation
@@ -80,9 +84,10 @@ class Dense(_init):
         Args:
             upstream_grad (samples, n_neurons): Dot product with upstream gradient
         """
-        self.delta_weights = np.dot(self.activation_prev.T, upstream_grad)
-        self.delta_bias = np.sum(upstream_grad, axis=0, keepdims=True)
-        self.delta_grad = np.dot(upstream_grad, self.weights.T)
+        self.delta_weights, self.delta_bias, self.delta_grad = self.optimiser.backward(
+                                                                activation_prev=self.activation_prev,
+                                                                weights=self.weights,
+                                                                upstream_grad=upstream_grad)
         if self.freeze_weights == False:
             self._update_params()
 
