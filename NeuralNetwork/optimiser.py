@@ -16,6 +16,7 @@ class SGDM(object):
     """Stochastic Gradient Descent with Momentum
     Using the purple version in the video
     https://www.youtube.com/watch?app=desktop&v=k8fTYJPd3_I&ab_channel=Deeplearning.ai
+    https://www.youtube.com/watch?v=ewN0vFYFJ7A&ab_channel=NPTEL-NOCIITM
     https://towardsdatascience.com/stochastic-gradient-descent-with-momentum-a84097641a5d
     https://medium.com/optimization-algorithms-for-deep-neural-networks/gradient-descent-with-momentum-dce805cd8de8
     """
