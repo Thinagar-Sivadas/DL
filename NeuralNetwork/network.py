@@ -146,7 +146,7 @@ class Sequential(object):
                 param.append(layer.params)
                 if layer.params is not None:
                     total_param += param[-1]
-                    if layer.freeze_weights:
+                    if layer.optimiser.freeze_weights:
                         non_trainable_param += param[-1]
             else:
                 layer_shape.append(layer_shape[-1])

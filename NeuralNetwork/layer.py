@@ -4,8 +4,8 @@ class _init(object):
     """Intialisation of Layers
     """
 
-    def _init_layer(self, name, n_neurons, weights, bias, freeze_weights, lr, optimiser):
-        """Intialise layer with parameters
+    def _init_layer(self, name, n_neurons, weights, bias, optimiser):
+        """Initialise layer with parameters
 
         Args:
             name (str): Layer name
@@ -22,8 +22,6 @@ class _init(object):
         self.n_neurons = n_neurons
         self.weights = weights
         self.bias = bias
-        self.lr = lr
-        self.freeze_weights = freeze_weights
         self.optimiser = optimiser
 
         if self.weights is not None and self.bias is not None:
@@ -63,9 +61,9 @@ class Dense(_init):
     """Dense Layer
     """
 
-    def __init__(self, name, n_neurons, optimiser, weights=None, bias=None, freeze_weights=False, lr=1):
+    def __init__(self, name, n_neurons, optimiser, weights=None, bias=None):
         super()._init_layer(name=name, n_neurons=n_neurons, weights=weights,
-                           bias=bias, freeze_weights=freeze_weights, lr=lr, optimiser=optimiser)
+                            bias=bias, optimiser=optimiser)
 
     def forward(self, inputs):
         """Forward propagation
@@ -84,13 +82,8 @@ class Dense(_init):
         Args:
             upstream_grad (samples, n_neurons): Dot product with upstream gradient
         """
-        self.delta_weights, self.delta_bias, self.delta_grad = self.optimiser.backward(
+        self.weights, self.bias, self.delta_grad = self.optimiser.backward(
                                                                 activation_prev=self.activation_prev,
                                                                 weights=self.weights,
+                                                                bias=self.bias,
                                                                 upstream_grad=upstream_grad)
-        if self.freeze_weights == False:
-            self._update_params()
-
-    def _update_params(self):
-        self.weights = self.weights - (self.lr * self.delta_weights)
-        self.bias = self.bias - (self.lr * self.delta_bias)
