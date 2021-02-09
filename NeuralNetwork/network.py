@@ -1,4 +1,5 @@
 import numpy as np
+import pickle
 import plotly.graph_objects as go
 
 class Sequential(object):
@@ -22,7 +23,8 @@ class Sequential(object):
     def train(self, epochs=100):
         self.cost = []
 
-        for epoch in range(1, epochs+1):
+        epoch = 1
+        while epoch < epochs+1:
 
             batch_inputs, batch_target = self._mini_batch()
 
@@ -35,9 +37,11 @@ class Sequential(object):
                 self._backward(delta_grad=delta_grad)
 
             cost = float(f'{self.loss.output:.6f}')
+
             self.cost.append(cost)
             if (epoch % 20) == 0:
                 print(f'Epoch:{epoch}/{epochs} ------------------------ Loss:{cost}')
+            epoch += 1
 
         print('\n' + f'-' * 20 + 'Training Completed' + f'-' * 20 + '\n')
         fig = go.Figure()
@@ -119,6 +123,14 @@ class Sequential(object):
             batch_target.append(self.target[ind:ind+self.batch])
 
         return batch_inputs, batch_target
+
+    def save_weights(self):
+        with open('model.pkl', 'wb') as output:
+            pickle.dump(self.layers, output, pickle.HIGHEST_PROTOCOL)
+
+    def load_weights(self):
+        with open('model.pkl', 'rb') as output:
+            self.layers = pickle.load(output)
 
     def __str__(self):
         header = ['Layer_Name', 'Type', 'Output Shape', 'Param']
