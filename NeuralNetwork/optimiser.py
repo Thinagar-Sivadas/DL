@@ -19,6 +19,7 @@ class _init(object):
 class SGD(_init):
     """Stochastic Gradient Descent
     https://www.youtube.com/watch?v=uJryes5Vk1o&ab_channel=Deeplearning.ai
+    https://aerinykim.medium.com/73c7368644fa
 
     Stochastic Gradient Descent with Momentum
     Using the purple version in andrew ng video

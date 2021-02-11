@@ -24,8 +24,9 @@ class MSE(_init):
         """
         self.target = target
         self.pred_val = pred_val
+        self.batch_size = self.target.shape[0]
         diff = self.target - self.pred_val
-        self.output = np.sum(diff**2) / (self.target.size * 2)
+        self.output = np.sum(diff**2) / (self.batch_size * 2)
 
     def backward(self):
         """Backward propagation
@@ -35,7 +36,7 @@ class MSE(_init):
             samples, n_features: Gradient of loss
         """
         diff = self.target - self.pred_val
-        self.delta_grad = -1 * diff / self.target.size
+        self.delta_grad = -1 * diff / self.batch_size
         return self.delta_grad
 
 class MAE(_init):
@@ -55,8 +56,9 @@ class MAE(_init):
         """
         self.target = target
         self.pred_val = pred_val
+        self.batch_size = self.target.shape[0]
         diff = np.abs(self.target - self.pred_val)
-        self.output = np.sum(diff) / self.target.size
+        self.output = np.sum(diff) / self.batch_size
 
     def backward(self):
         """Backward propagation
@@ -66,7 +68,7 @@ class MAE(_init):
             samples, n_features: Gradient of loss
         """
         diff = self.target - self.pred_val
-        self.delta_grad = np.where(diff > 0, -1, 1) / self.target.size
+        self.delta_grad = np.where(diff > 0, -1, 1) / self.batch_size
         return self.delta_grad
 
 class Hubber(_init):
@@ -91,13 +93,14 @@ class Hubber(_init):
             pred_val (samples, n_features): Predicted value
         """
         self.target = target
+        self.batch_size = self.target.shape[0]
         self.pred_val = pred_val
         diff = self.target - self.pred_val
         mask = np.where(np.abs(diff) < self.delta,
                         diff**2 / 2,
                         self.delta * (np.abs(diff) - 0.5 * self.delta)
                         )
-        self.output = mask.sum() / self.target.size
+        self.output = mask.sum() / self.batch_size
 
     def backward(self):
         """Backward propagation
@@ -111,7 +114,7 @@ class Hubber(_init):
         self.delta_grad = np.where(np.abs(diff) < self.delta,
                                    -1 * diff,
                                    np.where(diff > 0, -1 * self.delta, 1 * self.delta)
-                                   ) / self.target.size
+                                   ) / self.batch_size
         return self.delta_grad
 
 class LogCosh(_init):
@@ -130,10 +133,11 @@ class LogCosh(_init):
             pred_val (samples, n_features): Predicted value
         """
         self.target = target
+        self.batch_size = self.target.shape[0]
         self.pred_val = pred_val
         diff = self.target - self.pred_val
         self.output = np.sum(np.log((np.exp(diff) + np.exp(-diff)) / 2)
-                             ) / self.target.size
+                             ) / self.batch_size
 
     def backward(self):
         """Backward propagation
@@ -145,7 +149,7 @@ class LogCosh(_init):
         """
         diff = self.target - self.pred_val
         self.delta_grad = -1 * ((np.exp(diff) - np.exp(-diff)) / (np.exp(diff) + np.exp(-diff))
-                                ) / self.target.size
+                                ) / self.batch_size
         return self.delta_grad
 
 class Quantile(_init):
@@ -174,10 +178,11 @@ class Quantile(_init):
             pred_val (samples, n_features): Predicted value
         """
         self.target = target
+        self.batch_size = self.target.shape[0]
         self.pred_val = pred_val
         diff = self.target - self.pred_val
         mask = np.maximum(self.quantile * diff, (self.quantile - 1) * diff)
-        self.output = mask.sum() / self.target.size
+        self.output = mask.sum() / self.batch_size
 
     def backward(self):
         """Backward propagation
@@ -190,7 +195,7 @@ class Quantile(_init):
         self.delta_grad = np.where(diff >= 0,
                                    -self.quantile,
                                    1 - self.quantile,
-                                   ) / self.target.size
+                                   ) / self.batch_size
         return self.delta_grad
 
 class CrossEntropy(_init):
@@ -210,9 +215,10 @@ class CrossEntropy(_init):
             pred_val (samples, n_features): Predicted value
         """
         self.target = target
+        self.batch_size = self.target.shape[0]
         self.pred_val = pred_val
         diff = -self.target * (np.log(self.pred_val)) - (1 - self.target) * np.log(1 - self.pred_val)
-        self.output = diff.sum() / self.target.size
+        self.output = diff.sum() / self.batch_size
 
     def backward(self):
         """Backward propagation
@@ -224,7 +230,7 @@ class CrossEntropy(_init):
         """
         self.delta_grad = ((-self.target / self.pred_val)
                            + ((1 - self.target) / (1 - self.pred_val))
-                           ) / self.target.size
+                           ) / self.batch_size
         return self.delta_grad
 
 class SquaredHinge(_init):
@@ -244,9 +250,10 @@ class SquaredHinge(_init):
             pred_val (samples, n_features): Predicted value
         """
         self.target = target
+        self.batch_size = self.target.shape[0]
         self.pred_val = pred_val
         diff = 1 - (self.target * self.pred_val)
-        self.output = np.maximum(0, np.power(diff, 2)).sum() / (self.target.size * 2)
+        self.output = np.maximum(0, np.power(diff, 2)).sum() / (self.batch_size * 2)
 
     def backward(self):
         """Backward propagation
@@ -257,5 +264,5 @@ class SquaredHinge(_init):
             samples, n_features: Gradient of loss
         """
         diff = 1 - (self.target * self.pred_val)
-        self.delta_grad = np.where(diff > 0, diff * -self.target, 0) / self.target.size
+        self.delta_grad = np.where(diff > 0, diff * -self.target, 0) / self.batch_size
         return self.delta_grad
