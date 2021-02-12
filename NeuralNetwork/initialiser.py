@@ -5,7 +5,7 @@ class Initialise(object):
     """
 
     def __init__(self, weight_init):
-        weight_init_list = ['Kaiming', 'He', 'Glorot', 'Xavier']
+        weight_init_list = ['Kaiming', 'He', 'Glorot', 'Xavier', None]
         self.weight_init = weight_init
         if self.weight_init is not None and self.weight_init not in weight_init_list:
             raise ValueError(f'Not in list of weights intialisation {weight_init_list}')
@@ -21,7 +21,7 @@ class Initialise(object):
             n_input_neurons (int): Number of input neurons to current layer
             next_layer (obj): Contains object of next layer
         """
-        if self.weight_init == 'Kaiming' or next_layer.__class__.__name__ in ['ReLU', 'LeakyReLU']:
+        if self.weight_init in ['Kaiming', 'He'] or next_layer.__class__.__name__ in ['ReLU', 'LeakyReLU']:
             # Initialisation for ReLU, LeakyReLU, Kaiming/He Initialisation
             print('Kaiming/He Weights Initialisation\n')
             self.weights = np.random.randn(n_input_neurons, self.n_neurons) * np.sqrt(2 / n_input_neurons)
