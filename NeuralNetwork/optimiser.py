@@ -4,7 +4,7 @@ class _init(object):
     """Initialisation of Optimiser
     """
 
-    def _init_optimiser(self, lr, freeze_weights, momentum, nesterov):
+    def _init_optimiser(self, lr, freeze_weights, momentum, nesterov, regulariser):
         """Initialise optimiser with parameters
 
         Args:
@@ -15,6 +15,9 @@ class _init(object):
         self.freeze_weights = freeze_weights
         self.momentum = momentum
         self.nesterov = nesterov
+        self.regulariser = regulariser
+        if not hasattr(self.regulariser, '__module__') or 'regulariser' not in self.regulariser.__module__:
+            raise ValueError(f'Selected regulariser is invalid')
 
 class SGD(_init):
     """Stochastic Gradient Descent
@@ -34,11 +37,13 @@ class SGD(_init):
     https://www.youtube.com/watch?v=sV9aiEsXanE&t=303s&ab_channel=NPTEL-NOCIITM
     """
 
-    def __init__(self, lr=1, freeze_weights=False, momentum=0.9, nesterov=False):
+    def __init__(self, regulariser, lr=1, freeze_weights=False, momentum=0.9, nesterov=False):
         super()._init_optimiser(lr=lr, freeze_weights=freeze_weights,
-                                momentum=momentum, nesterov=nesterov)
+                                momentum=momentum, nesterov=nesterov, regulariser=regulariser)
 
     def backward(self, activation_prev, weights, bias, upstream_grad):
+
+        self.regulariser.forward(weights=weights, batch_size=activation_prev.shape[0])
 
         delta_weights = np.dot(activation_prev.T, upstream_grad)
         if hasattr(self, 'delta_weights_velocity') == False:
@@ -54,10 +59,12 @@ class SGD(_init):
 
         if self.freeze_weights == False:
             if self.nesterov == False:
-                weights = weights - (self.lr * self.delta_weights_velocity)
+                weights = weights - (self.lr * self.delta_weights_velocity) \
+                                  - (self.lr * self.regulariser.backward())
                 bias = bias - (self.lr * self.delta_bias_velocity)
             elif self.nesterov == True:
-                weights = weights - (self.lr * (self.delta_weights_velocity * self.momentum + delta_weights))
+                weights = weights - (self.lr * (self.delta_weights_velocity * self.momentum + delta_weights)) \
+                                  - (self.lr * self.regulariser.backward())
                 bias = bias - (self.lr * (self.delta_bias_velocity * self.momentum + delta_bias))
 
         return weights, bias, delta_grad

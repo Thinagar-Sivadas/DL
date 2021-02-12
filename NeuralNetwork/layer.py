@@ -1,4 +1,5 @@
 import numpy as np
+from NeuralNetwork.initialiser import Initialise
 
 class _init(object):
     """Intialisation of Layers
@@ -19,51 +20,30 @@ class _init(object):
             ValueError: If chosen n_neurons and self initialised weights and bias matrix does not tally
         """
         self.name = name
+        if not isinstance(self.name, str):
+            raise ValueError('Must be a string')
         self.n_neurons = n_neurons
         self.weights = weights
         self.bias = bias
         self.optimiser = optimiser
 
-        if self.weights is not None and self.bias is not None:
-            self.params = self.weights.size + self.bias.size
-            if self.weights.shape[1] != self.n_neurons or self.bias.shape[1] != self.n_neurons:
-                raise ValueError(f'n_neurons chosen for {self.name} does not tally with initialised weights and bias')
-        else:
-            self.params = None
-
-        if not hasattr(self.optimiser, '__module__') or self.optimiser.__module__ not in 'NeuralNetwork.optimiser':
+        if not hasattr(self.optimiser, '__module__') or 'optimiser' not in self.optimiser.__module__:
             raise ValueError(f'Selected optimiser for {self.name} is invalid')
 
-    def _init_param(self, n_inputs, next_layer):
-        """Intialise weights and bias
-        https://towardsdatascience.com/26c649eb3b78
-        https://towardsdatascience.com/954fb9b47c79
-        https://www.youtube.com/watch?v=yWCj95DdWXs&ab_channel=NPTEL-NOCIITM
-        https://www.youtube.com/watch?v=s2coXdufOzE&t=211s&ab_channel=Deeplearning.ai
+        if (self.weights.size != 0) and (self.bias.size != 0) and \
+           ((self.weights.shape[1] != self.n_neurons) or (self.bias.shape[1] != self.n_neurons)):
+               raise ValueError(f'n_neurons chosen for {self.name} does not tally with initialised weights and bias')
 
-        Args:
-            n_inputs (int): Number of input neurons to current layer
-            next_layer (obj): Contains object of next layer
-        """
-        self.n_inputs = n_inputs
-
-        if next_layer.__class__.__name__ in ['ReLU', 'LeakyReLU']:
-            # Initialisation for ReLU, LeakyReLU
-            self.weights = np.random.randn(self.n_inputs, self.n_neurons) * np.sqrt(2 / self.n_inputs)
-        else:
-            # Initialisation for any others
-            self.weights = np.random.randn(self.n_inputs, self.n_neurons) * np.sqrt(1 / self.n_inputs)
-
-        self.bias = np.zeros(shape=(1, self.n_neurons))
-        self.params = self.weights.size + self.bias.size
-
-class Dense(_init):
+class Dense(_init, Initialise):
     """Dense Layer
     """
 
-    def __init__(self, name, n_neurons, optimiser, weights=None, bias=None):
-        super()._init_layer(name=name, n_neurons=n_neurons, weights=weights,
-                            bias=bias, optimiser=optimiser)
+    def __init__(self, name, n_neurons, optimiser, weight_init=None,
+                 weights=np.empty(shape=(0,0)), bias=np.empty(shape=(0,0))):
+
+        _init._init_layer(self, name=name, n_neurons=n_neurons, weights=weights,
+                          bias=bias, optimiser=optimiser)
+        Initialise.__init__(self, weight_init=weight_init)
 
     def forward(self, inputs):
         """Forward propagation
