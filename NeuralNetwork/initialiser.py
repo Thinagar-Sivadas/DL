@@ -7,7 +7,7 @@ class Initialise(object):
     def __init__(self, weight_init):
         weight_init_list = ['Kaiming', 'He', 'Glorot', 'Xavier', None]
         self.weight_init = weight_init
-        if self.weight_init is not None and self.weight_init not in weight_init_list:
+        if self.weight_init not in weight_init_list:
             raise ValueError(f'Not in list of weights intialisation {weight_init_list}')
 
     def _init_param(self, n_input_neurons, next_layer):
