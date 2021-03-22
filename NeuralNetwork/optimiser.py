@@ -4,7 +4,7 @@ class _init(object):
     """Initialisation of Optimiser
     """
 
-    def _init_optimiser(self, lr, freeze_weights, momentum, nesterov, regulariser):
+    def _init_optimiser(self, lr, freeze_weights, regulariser):
         """Initialise optimiser with parameters
 
         Args:
@@ -13,8 +13,6 @@ class _init(object):
         """
         self.lr = lr
         self.freeze_weights = freeze_weights
-        self.momentum = momentum
-        self.nesterov = nesterov
         self.regulariser = regulariser
         if not hasattr(self.regulariser, '__module__') or 'regulariser' not in self.regulariser.__module__:
             raise ValueError(f'Selected regulariser is invalid')
@@ -39,7 +37,9 @@ class SGD(_init):
 
     def __init__(self, regulariser, lr=1, freeze_weights=False, momentum=0.9, nesterov=False):
         super()._init_optimiser(lr=lr, freeze_weights=freeze_weights,
-                                momentum=momentum, nesterov=nesterov, regulariser=regulariser)
+                                regulariser=regulariser)
+        self.momentum = momentum
+        self.nesterov = nesterov
 
     def backward(self, activation_prev, weights, bias, upstream_grad):
 
@@ -66,5 +66,73 @@ class SGD(_init):
                 weights = weights - (self.lr * (self.delta_weights_velocity * self.momentum + delta_weights)) \
                                   - (self.lr * self.regulariser.backward())
                 bias = bias - (self.lr * (self.delta_bias_velocity * self.momentum + delta_bias))
+
+        return weights, bias, delta_grad
+
+class AdaGrad(_init):
+    """AdaGrad
+    https://www.youtube.com/watch?v=FKCV76N9Ys0&ab_channel=NPTEL-NOCIITM
+    """
+
+    def __init__(self, regulariser, lr=1, freeze_weights=False, eps=1e-10):
+        super()._init_optimiser(lr=lr, freeze_weights=freeze_weights,
+                                regulariser=regulariser)
+        self.eps = eps
+
+    def backward(self, activation_prev, weights, bias, upstream_grad):
+
+        self.regulariser.forward(weights=weights, batch_size=activation_prev.shape[0])
+
+        delta_weights = np.dot(activation_prev.T, upstream_grad)
+        if hasattr(self, 'delta_weights_velocity') == False:
+            self.delta_weights_velocity = np.zeros_like(delta_weights)
+        self.delta_weights_velocity += (delta_weights ** 2)
+
+        delta_bias = np.sum(upstream_grad, axis=0, keepdims=True)
+        if hasattr(self, 'delta_bias_velocity') == False:
+            self.delta_bias_velocity = np.zeros_like(delta_bias)
+        self.delta_bias_velocity += (delta_bias ** 2)
+
+        delta_grad = np.dot(upstream_grad, weights.T)
+
+        if self.freeze_weights == False:
+            weights = weights - (self.lr / np.sqrt(self.delta_weights_velocity + self.eps)) * delta_weights \
+                                - (self.lr * self.regulariser.backward())
+            bias = bias - (self.lr / np.sqrt(self.delta_bias_velocity + self.eps)) * delta_bias
+
+        return weights, bias, delta_grad
+
+class RmsProp(_init):
+    """RMSProp
+    https://www.youtube.com/watch?v=FKCV76N9Ys0&ab_channel=NPTEL-NOCIITM
+    """
+
+    def __init__(self, regulariser, lr=1, freeze_weights=False, eps=1e-10, momentum=0.9):
+        super()._init_optimiser(lr=lr, freeze_weights=freeze_weights,
+                                regulariser=regulariser)
+        self.momentum = momentum
+        self.eps = eps
+
+    def backward(self, activation_prev, weights, bias, upstream_grad):
+
+        self.regulariser.forward(weights=weights, batch_size=activation_prev.shape[0])
+
+        delta_weights = np.dot(activation_prev.T, upstream_grad)
+        if hasattr(self, 'delta_weights_velocity') == False:
+            self.delta_weights_velocity = np.zeros_like(delta_weights)
+        self.delta_weights_velocity = (self.momentum * self.delta_weights_velocity) + \
+                                      (1 - self.momentum) * (delta_weights ** 2)
+
+        delta_bias = np.sum(upstream_grad, axis=0, keepdims=True)
+        if hasattr(self, 'delta_bias_velocity') == False:
+            self.delta_bias_velocity = np.zeros_like(delta_bias)
+        self.delta_bias_velocity = (self.momentum * self.delta_bias_velocity) + (1 - self.momentum) * (delta_bias ** 2)
+
+        delta_grad = np.dot(upstream_grad, weights.T)
+
+        if self.freeze_weights == False:
+            weights = weights - (self.lr / np.sqrt(self.delta_weights_velocity + self.eps)) * delta_weights \
+                                - (self.lr * self.regulariser.backward())
+            bias = bias - (self.lr / np.sqrt(self.delta_bias_velocity + self.eps)) * delta_bias
 
         return weights, bias, delta_grad
